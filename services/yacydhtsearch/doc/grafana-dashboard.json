@@ -724,7 +724,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 12,
         "x": 0,
         "y": 44
       },
@@ -755,7 +755,7 @@
     },
     {
       "id": 18,
-      "title": "One call to one peer (p50/p95), by outcome",
+      "title": "One call to one peer (p95), by outcome",
       "description": "An unreachable peer holds the call until the peer call budget ends, so it costs the most and returns the least.",
       "type": "timeseries",
       "datasource": {
@@ -764,8 +764,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
+        "w": 12,
+        "x": 12,
         "y": 44
       },
       "fieldConfig": {
@@ -789,13 +789,62 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le, outcome) (clamp_min(yacydhtsearch_peer_call_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_peer_call_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
-          "legendFormat": "p50 {{outcome}}"
-        },
-        {
-          "refId": "B",
           "expr": "histogram_quantile(0.95, sum by (le, outcome) (clamp_min(yacydhtsearch_peer_call_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_peer_call_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
-          "legendFormat": "p95 {{outcome}}"
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "title": "How long a call to an answering peer took",
+      "description": "Each row is a range of call times. The cell color shows how many calls took that long. The rows above the peer call budget hold the calls that ran over it.",
+      "type": "heatmap",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 52
+      },
+      "interval": "$window",
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "color": {
+          "mode": "scheme",
+          "scheme": "Viridis",
+          "steps": 64,
+          "exponent": 0.5,
+          "reverse": false,
+          "min": 0
+        },
+        "yAxis": {
+          "unit": "s",
+          "axisPlacement": "left"
+        },
+        "legend": {
+          "show": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "yHistogram": true
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-09
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (le) (clamp_min(yacydhtsearch_peer_call_duration_seconds_bucket{outcome=\"answered\", instance=~\"$service_instance\"} - (yacydhtsearch_peer_call_duration_seconds_bucket{outcome=\"answered\", instance=~\"$service_instance\"} offset $window), 0))",
+          "format": "heatmap",
+          "legendFormat": "{{le}}"
         }
       ]
     },
@@ -810,9 +859,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 44
+        "w": 12,
+        "x": 12,
+        "y": 52
       },
       "fieldConfig": {
         "defaults": {
@@ -853,7 +902,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 52
+        "y": 60
       },
       "panels": []
     },
@@ -869,7 +918,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 53
+        "y": 61
       },
       "fieldConfig": {
         "defaults": {
@@ -908,7 +957,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 53
+        "y": 61
       },
       "fieldConfig": {
         "defaults": {
@@ -950,7 +999,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 53
+        "y": 61
       },
       "fieldConfig": {
         "defaults": {
@@ -1005,7 +1054,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 61
+        "y": 69
       },
       "panels": []
     },
@@ -1021,7 +1070,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 62
+        "y": 70
       },
       "fieldConfig": {
         "defaults": {
@@ -1071,7 +1120,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 62
+        "y": 70
       },
       "fieldConfig": {
         "defaults": {
@@ -1111,7 +1160,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 62
+        "y": 70
       },
       "fieldConfig": {
         "defaults": {
@@ -1151,7 +1200,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 70
+        "y": 78
       },
       "fieldConfig": {
         "defaults": {
@@ -1191,7 +1240,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 70
+        "y": 78
       },
       "fieldConfig": {
         "defaults": {
@@ -1231,7 +1280,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 70
+        "y": 78
       },
       "fieldConfig": {
         "defaults": {
