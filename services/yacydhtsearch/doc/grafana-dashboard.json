@@ -1,0 +1,1257 @@
+{
+  "title": "yacydhtsearch",
+  "uid": "yacydhtsearch",
+  "editable": true,
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "15s",
+  "graphTooltip": 1,
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0
+      },
+      {
+        "name": "service_instance",
+        "label": "Process instance",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "query": {
+          "query": "label_values(yacydhtsearch_info, instance)",
+          "refId": "service-instance-variable"
+        },
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "refresh": 1,
+        "sort": 1
+      },
+      {
+        "name": "window",
+        "label": "Smoothing window",
+        "type": "interval",
+        "query": "30s,1m,2m,5m,10m,30m,1h,6h,12h,1d",
+        "options": [
+          {
+            "text": "auto",
+            "value": "$__auto_interval_window",
+            "selected": true
+          },
+          {
+            "text": "30s",
+            "value": "30s",
+            "selected": false
+          },
+          {
+            "text": "1m",
+            "value": "1m",
+            "selected": false
+          },
+          {
+            "text": "2m",
+            "value": "2m",
+            "selected": false
+          },
+          {
+            "text": "5m",
+            "value": "5m",
+            "selected": false
+          },
+          {
+            "text": "10m",
+            "value": "10m",
+            "selected": false
+          },
+          {
+            "text": "30m",
+            "value": "30m",
+            "selected": false
+          },
+          {
+            "text": "1h",
+            "value": "1h",
+            "selected": false
+          },
+          {
+            "text": "6h",
+            "value": "6h",
+            "selected": false
+          },
+          {
+            "text": "12h",
+            "value": "12h",
+            "selected": false
+          },
+          {
+            "text": "1d",
+            "value": "1d",
+            "selected": false
+          }
+        ],
+        "auto": true,
+        "auto_count": 60,
+        "auto_min": "30s",
+        "current": {
+          "text": "auto",
+          "value": "$__auto_interval_window",
+          "selected": true
+        },
+        "refresh": 2,
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP traffic",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "title": "Responses by endpoint and status code",
+      "description": "A request that matched no route counts under the endpoint \"unmatched\".",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (endpoint, code) (clamp_min(yacydhtsearch_http_requests_total{instance=~\"$service_instance\"} - (yacydhtsearch_http_requests_total{instance=~\"$service_instance\"} offset $window), 0))",
+          "legendFormat": "{{endpoint}} {{code}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Request latency across endpoints (p50/p95/p99)",
+      "description": "Every search counts here, including one the ranking cache answered without a network search.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (clamp_min(yacydhtsearch_http_request_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_http_request_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (clamp_min(yacydhtsearch_http_request_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_http_request_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (clamp_min(yacydhtsearch_http_request_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_http_request_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Network searches",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "panels": []
+    },
+    {
+      "id": 5,
+      "title": "Network searches performed",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "clamp_min(yacydhtsearch_network_searches_performed_total{instance=~\"$service_instance\"} - (yacydhtsearch_network_searches_performed_total{instance=~\"$service_instance\"} offset $window), 0)",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Network searches that found no askable peer",
+      "description": "The directory held no peer for the terms of these queries, so they came back empty.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "clamp_min(yacydhtsearch_network_search_peers_asked_count{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_peers_asked_count{instance=~\"$service_instance\"} offset $window), 0) - clamp_min(yacydhtsearch_network_searches_performed_total{instance=~\"$service_instance\"} - (yacydhtsearch_network_searches_performed_total{instance=~\"$service_instance\"} offset $window), 0)",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Network search duration (p50/p95/p99)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (clamp_min(yacydhtsearch_network_search_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (clamp_min(yacydhtsearch_network_search_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (clamp_min(yacydhtsearch_network_search_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Peers asked for one network search (p50/p95/p99)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (clamp_min(yacydhtsearch_network_search_peers_asked_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_peers_asked_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (clamp_min(yacydhtsearch_network_search_peers_asked_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_peers_asked_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (clamp_min(yacydhtsearch_network_search_peers_asked_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_peers_asked_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Share of asked peers that answered inside the budget (p10/p50/p90)",
+      "description": "p10 is the tenth of network searches that got the least back. A network search with no asked peer is absent here.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.10, sum by (le) (clamp_min(yacydhtsearch_network_search_completeness_ratio_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_completeness_ratio_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p10"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum by (le) (clamp_min(yacydhtsearch_network_search_completeness_ratio_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_completeness_ratio_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.90, sum by (le) (clamp_min(yacydhtsearch_network_search_completeness_ratio_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_network_search_completeness_ratio_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p90"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Peer directory",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "panels": []
+    },
+    {
+      "id": 11,
+      "title": "Peers the directory holds, answering and in total",
+      "description": "A held peer that answers no address is kept and probed again every refresh cycle. Only an answering peer is asked for a search.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "yacydhtsearch_directory_answering_peers{instance=~\"$service_instance\"}",
+          "legendFormat": "answering"
+        },
+        {
+          "refId": "B",
+          "expr": "yacydhtsearch_directory_peers{instance=~\"$service_instance\"}",
+          "legendFormat": "held"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Share of directory capacity used",
+      "description": "The directory drops a peer only when it is full.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 8,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "custom": {},
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "graphMode": "area",
+        "textMode": "auto",
+        "colorMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "yacydhtsearch_directory_peers{instance=~\"$service_instance\"} / yacydhtsearch_directory_capacity{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Peer directory changes, by change",
+      "description": "A refresh cycle changes the directory in one burst. A peer is admitted once, then answers or stays silent on each probe, and is dropped when the directory has no room for it.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (change) (clamp_min(yacydhtsearch_directory_peer_changes_total{instance=~\"$service_instance\"} - (yacydhtsearch_directory_peer_changes_total{instance=~\"$service_instance\"} offset $window), 0))",
+          "legendFormat": "{{change}}"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Share of probed peers that answered",
+      "description": "A refresh cycle probes the peers it holds. A falling share means the seedlists carry addresses the network no longer serves.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (instance) (clamp_min(yacydhtsearch_directory_peer_changes_total{change=\"answering\",instance=~\"$service_instance\"} - (yacydhtsearch_directory_peer_changes_total{change=\"answering\",instance=~\"$service_instance\"} offset $window), 0)) / sum by (instance) (clamp_min(yacydhtsearch_directory_peer_changes_total{change=~\"answering|silent\",instance=~\"$service_instance\"} - (yacydhtsearch_directory_peer_changes_total{change=~\"answering|silent\",instance=~\"$service_instance\"} offset $window), 0)) or sum by (instance) (clamp_min(yacydhtsearch_directory_peer_changes_total{change=~\"answering|silent\",instance=~\"$service_instance\"} - (yacydhtsearch_directory_peer_changes_total{change=~\"answering|silent\",instance=~\"$service_instance\"} offset $window), 0)) * 0",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Ring distance from a query term to the peer picked for it (p50/p95/p99)",
+      "description": "Share of the DHT ring between a term and the peer asked to answer for it. Zero is the peer that holds the term. A rise means the directory holds no peer near the terms this instance asks about.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (clamp_min(yacydhtsearch_selection_ring_fraction_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_selection_ring_fraction_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (clamp_min(yacydhtsearch_selection_ring_fraction_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_selection_ring_fraction_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (clamp_min(yacydhtsearch_selection_ring_fraction_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_selection_ring_fraction_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Peer calls",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "panels": []
+    },
+    {
+      "id": 17,
+      "title": "Calls to peers, by outcome",
+      "description": "A refused peer answered and declined the search. An unreadable answer arrived but did not parse.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 44
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (outcome) (clamp_min(yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} - (yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} offset $window), 0))",
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Share of calls a peer answered",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 44
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (instance) (clamp_min(yacydhtsearch_peer_calls_total{outcome=\"answered\",instance=~\"$service_instance\"} - (yacydhtsearch_peer_calls_total{outcome=\"answered\",instance=~\"$service_instance\"} offset $window), 0)) / sum by (instance) (clamp_min(yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} - (yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} offset $window), 0)) or sum by (instance) (clamp_min(yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} - (yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} offset $window), 0)) * 0",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Ranking cache",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "panels": []
+    },
+    {
+      "id": 20,
+      "title": "Rankings answered, by where the ranking came from",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 53
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (source) (clamp_min(yacydhtsearch_ranking_lookups_total{instance=~\"$service_instance\"} - (yacydhtsearch_ranking_lookups_total{instance=~\"$service_instance\"} offset $window), 0))",
+          "legendFormat": "{{source}}"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Share of queries answered from the cache",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 53
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (instance) (clamp_min(yacydhtsearch_ranking_lookups_total{source=\"cache\",instance=~\"$service_instance\"} - (yacydhtsearch_ranking_lookups_total{source=\"cache\",instance=~\"$service_instance\"} offset $window), 0)) / sum by (instance) (clamp_min(yacydhtsearch_ranking_lookups_total{instance=~\"$service_instance\"} - (yacydhtsearch_ranking_lookups_total{instance=~\"$service_instance\"} offset $window), 0)) or sum by (instance) (clamp_min(yacydhtsearch_ranking_lookups_total{instance=~\"$service_instance\"} - (yacydhtsearch_ranking_lookups_total{instance=~\"$service_instance\"} offset $window), 0)) * 0",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "Ranking cache failures, by action",
+      "description": "A lookup failure sends a query the cache could have answered to the network. A store failure means the next query pays the same cost.",
+      "type": "state-timeline",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 53
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "fillOpacity": 70,
+            "lineWidth": 0
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "red"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "mergeValues": true,
+        "showValue": "auto",
+        "legend": {
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "clamp_min(yacydhtsearch_ranking_cache_failures_total{instance=~\"$service_instance\"} - (yacydhtsearch_ranking_cache_failures_total{instance=~\"$service_instance\"} offset $window), 0)",
+          "legendFormat": "{{action}}"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "title": "Items one ranking carries (p50/p95), by where the ranking came from",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 61
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le, source) (clamp_min(yacydhtsearch_ranking_items_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_ranking_items_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p50 {{source}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, source) (clamp_min(yacydhtsearch_ranking_items_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_ranking_items_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p95 {{source}}"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "title": "Go process",
+      "type": "row",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 69
+      },
+      "panels": []
+    },
+    {
+      "id": 25,
+      "title": "Process memory",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 70
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes{instance=~\"$service_instance\"} and on (job, instance) yacydhtsearch_info{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}} resident"
+        },
+        {
+          "refId": "B",
+          "expr": "go_memstats_heap_alloc_bytes{instance=~\"$service_instance\"} and on (job, instance) yacydhtsearch_info{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}} heap allocated"
+        },
+        {
+          "refId": "C",
+          "expr": "go_memstats_heap_inuse_bytes{instance=~\"$service_instance\"} and on (job, instance) yacydhtsearch_info{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}} heap in use"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "title": "CPU cores used",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 70
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(process_cpu_seconds_total{instance=~\"$service_instance\"}[$window]) and on (job, instance) yacydhtsearch_info{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "title": "Goroutines",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 70
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "go_goroutines{instance=~\"$service_instance\"} and on (job, instance) yacydhtsearch_info{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "title": "Garbage collection rate",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 78
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(go_gc_duration_seconds_count{instance=~\"$service_instance\"}[$window]) and on (job, instance) yacydhtsearch_info{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "title": "Share of time paused for garbage collection",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 78
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(go_gc_duration_seconds_sum{instance=~\"$service_instance\"}[$window]) and on (job, instance) yacydhtsearch_info{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "title": "Share of file descriptor capacity used",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 78
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(process_open_fds{instance=~\"$service_instance\"} / process_max_fds{instance=~\"$service_instance\"}) and on (job, instance) yacydhtsearch_info{instance=~\"$service_instance\"}",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    }
+  ]
+}
