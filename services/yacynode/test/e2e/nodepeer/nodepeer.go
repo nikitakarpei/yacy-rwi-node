@@ -17,10 +17,10 @@ import (
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/containerurl"
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/egressproxy"
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/httpprobe"
+	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/peerclient"
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/pollwait"
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/requiredimage"
 	"github.com/nikitakarpei/yacy-rwi-node/yacymodel"
-	"github.com/nikitakarpei/yacy-rwi-node/yacynode/test/e2e/peerclient"
 	"github.com/nikitakarpei/yacy-rwi-node/yacyproto"
 )
 

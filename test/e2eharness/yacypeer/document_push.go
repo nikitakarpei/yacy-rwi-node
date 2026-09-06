@@ -24,13 +24,15 @@ func TransferTokens() []string {
 	return tokens
 }
 
+// PushDocument indexes one plain-text document of the given tokens into the
+// real YaCy peer and reports the address it now holds it under.
 func PushDocument(
 	t *testing.T,
 	ctx context.Context,
 	probe *httpprobe.Probe,
 	yacyURL string,
 	tokens []string,
-) {
+) string {
 	t.Helper()
 	wantURL := fmt.Sprintf("http://transfer.example.invalid/doc-%d.txt", len(tokens))
 
@@ -54,6 +56,8 @@ func PushDocument(
 	if !strings.Contains(result.Body, "successall") {
 		t.Fatalf("push_p.json did not report success: %s", result.Body)
 	}
+
+	return wantURL
 }
 
 func buildMultipart(fields, files map[string]string) (body, contentType string) {

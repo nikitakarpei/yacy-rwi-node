@@ -17,8 +17,8 @@ import (
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/containerlog"
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/containerurl"
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/httpprobe"
+	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/peerclient"
 	"github.com/nikitakarpei/yacy-rwi-node/e2eharness/pollwait"
-	"github.com/nikitakarpei/yacy-rwi-node/yacynode/test/e2e/peerclient"
 )
 
 const defaultImage = "docker.io/yacy/yacy_search_server:latest"
