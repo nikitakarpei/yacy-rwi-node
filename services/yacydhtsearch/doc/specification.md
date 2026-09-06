@@ -27,8 +27,6 @@ nothing beyond a peer directory.
 * The service SHALL allow operators to configure the seedlists it uses to discover peers.
 * The service SHALL allow operators to configure a proxy for outbound connections.
 * The service SHALL query multiple peers of the configured network for each search request.
-* For each queried peer, the service SHALL contact all network addresses that its seed advertises
-  within one shared time budget.
 * The service SHALL NOT fail a query solely because some queried peers did not respond within
   the query's time budget.
 * The service SHALL bound the total time spent on a query by an operator-configured budget.
