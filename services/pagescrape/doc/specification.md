@@ -3,9 +3,16 @@
 ## Context
 
 `pagescrape` owns the scrape pipeline for a stack. The pipeline accepts a scrape request,
-fetches the requested representation through an operator-supplied proxy, offers it to every
-corpus, and carries scrape failures and corpus receipts to the outcome feed for the page.
+fetches the page content through an operator-supplied proxy, offers it to every corpus, and
+carries scrape failures and corpus receipts to the outcome feed for the page.
 Scrape requests and page offers pass through NATS JetStream.
+
+## Glossary
+
+* **Page URL** — the URL that identifies the page.
+* **Fetch URL** — the URL the service requests the content from. The page URL when the
+  request names none.
+* **Landed URL** — the URL of the last response of the fetch after all redirects.
 
 ## Non-Goals
 
@@ -18,14 +25,13 @@ Scrape requests and page offers pass through NATS JetStream.
 ## Functional Requirements
 
 * For each valid request, the service SHALL make one fetch, at the fetch URL of the request.
-* When a request names no fetch URL, the service SHALL fetch at its page URL.
 * The service SHALL send every origin request through the configured proxy.
 * A fetch SHALL follow redirects, but no more hops than the configuration permits.
 * A fetch SHALL fail as `redirects-exhausted` when it uses all the hops, or when the
   redirects come back to a URL it fetched before.
 * A redirect SHALL NOT change the page URL that identifies the offered page.
 * A fetch that succeeds SHALL offer the page one time. The offer carries the page URL, the
-  landed URL, the content type, the body, and all `X-Robots-Tag` values.
+  landed URL, the content type, the content, and all `X-Robots-Tag` values.
 * A fetch that does not succeed SHALL put one last failure on the outcome feed for the page.
   The origin can refuse the page, reject it, report no change, send too much data, or name
   an invalid redirect target.
