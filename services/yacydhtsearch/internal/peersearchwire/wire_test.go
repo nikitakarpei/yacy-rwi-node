@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/nikitakarpei/yacy-rwi-node/yacydhtsearch/internal/peersearchwire"
 	"github.com/nikitakarpei/yacy-rwi-node/yacymodel"
@@ -18,12 +19,38 @@ type recordedOutcome struct {
 	refused     int
 	unreachable int
 	unreadable  int
+	spent       time.Duration
 }
 
-func (r *recordedOutcome) PeerAnswered(context.Context, string, int)           { r.answered++ }
-func (r *recordedOutcome) PeerRefused(context.Context, string, int)            { r.refused++ }
-func (r *recordedOutcome) PeerUnreachable(context.Context, string, error)      { r.unreachable++ }
-func (r *recordedOutcome) PeerAnswerUnreadable(context.Context, string, error) { r.unreadable++ }
+func (r *recordedOutcome) PeerAnswered(_ context.Context, _ string, _ int, spent time.Duration) {
+	r.answered++
+	r.spent = spent
+}
+
+func (r *recordedOutcome) PeerRefused(_ context.Context, _ string, _ int, spent time.Duration) {
+	r.refused++
+	r.spent = spent
+}
+
+func (r *recordedOutcome) PeerUnreachable(
+	_ context.Context,
+	_ string,
+	_ error,
+	spent time.Duration,
+) {
+	r.unreachable++
+	r.spent = spent
+}
+
+func (r *recordedOutcome) PeerAnswerUnreadable(
+	_ context.Context,
+	_ string,
+	_ error,
+	spent time.Duration,
+) {
+	r.unreadable++
+	r.spent = spent
+}
 
 func peerAnswering(t *testing.T, body string, status int) string {
 	t.Helper()
@@ -69,6 +96,9 @@ func TestAPeerAnswerBecomesResultItems(t *testing.T) {
 	}
 	if observer.answered != 1 {
 		t.Fatalf("PeerAnswered reported %d times, want once", observer.answered)
+	}
+	if observer.spent <= 0 {
+		t.Fatalf("PeerAnswered reported %v spent, want the time the call took", observer.spent)
 	}
 }
 

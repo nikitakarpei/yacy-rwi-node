@@ -11,19 +11,17 @@ import (
 )
 
 const (
-	labelSource    = "source"
-	sourceCache    = "cache"
-	sourceNetwork  = "network"
-	labelAction    = "action"
-	actionLookup   = "lookup"
-	actionStore    = "store"
-	itemBucketBase = 5
+	labelSource   = "source"
+	sourceCache   = "cache"
+	sourceNetwork = "network"
+	labelAction   = "action"
+	actionLookup  = "lookup"
+	actionStore   = "store"
 )
 
 type RankingMetrics struct {
 	lookups  *prometheusclient.CounterVec
 	failures *prometheusclient.CounterVec
-	items    *prometheusclient.HistogramVec
 }
 
 func New(registry prometheusclient.Registerer) *RankingMetrics {
@@ -36,25 +34,18 @@ func New(registry prometheusclient.Registerer) *RankingMetrics {
 			Name: "yacydhtsearch_ranking_cache_failures_total",
 			Help: "Failures against the ranking cache, by action.",
 		}, []string{labelAction}),
-		items: prometheusclient.NewHistogramVec(prometheusclient.HistogramOpts{
-			Name:    "yacydhtsearch_ranking_items",
-			Help:    "Items one ranking carries, by where the ranking came from.",
-			Buckets: prometheusclient.LinearBuckets(0, itemBucketBase, itemBucketBase*2),
-		}, []string{labelSource}),
 	}
-	registry.MustRegister(metrics.lookups, metrics.failures, metrics.items)
+	registry.MustRegister(metrics.lookups, metrics.failures)
 
 	return metrics
 }
 
-func (m *RankingMetrics) CachedRankingAnswered(_ context.Context, _ searchquery.Query, items int) {
+func (m *RankingMetrics) CachedRankingAnswered(_ context.Context, _ searchquery.Query, _ int) {
 	m.lookups.WithLabelValues(sourceCache).Inc()
-	m.items.WithLabelValues(sourceCache).Observe(float64(items))
 }
 
-func (m *RankingMetrics) NetworkRankingAnswered(_ context.Context, _ searchquery.Query, items int) {
+func (m *RankingMetrics) NetworkRankingAnswered(_ context.Context, _ searchquery.Query, _ int) {
 	m.lookups.WithLabelValues(sourceNetwork).Inc()
-	m.items.WithLabelValues(sourceNetwork).Observe(float64(items))
 }
 
 func (m *RankingMetrics) RankingLookupFailed(context.Context, searchquery.Query, error) {

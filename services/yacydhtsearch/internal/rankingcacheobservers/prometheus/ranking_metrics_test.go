@@ -41,7 +41,6 @@ func TestARankingPublishesWhereItCameFrom(t *testing.T) {
 	for _, published := range []string{
 		`yacydhtsearch_ranking_lookups_total{source="network"} 1`,
 		`yacydhtsearch_ranking_lookups_total{source="cache"} 2`,
-		`yacydhtsearch_ranking_items_sum{source="cache"} 24`,
 	} {
 		if !strings.Contains(body, published) {
 			t.Fatalf("metrics do not carry %q:\n%s", published, body)

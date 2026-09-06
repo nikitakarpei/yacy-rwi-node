@@ -4,6 +4,7 @@ package applog
 import (
 	"context"
 	"log/slog"
+	"time"
 )
 
 const (
@@ -15,30 +16,54 @@ const (
 
 type PeerSearchLog struct{}
 
-func (PeerSearchLog) PeerAnswered(ctx context.Context, address string, resources int) {
+func (PeerSearchLog) PeerAnswered(
+	ctx context.Context,
+	address string,
+	resources int,
+	spent time.Duration,
+) {
 	slog.DebugContext(ctx, msgPeerAnswered,
 		slog.String("address", address),
 		slog.Int("resources", resources),
+		slog.Duration("spent", spent),
 	)
 }
 
-func (PeerSearchLog) PeerRefused(ctx context.Context, address string, status int) {
+func (PeerSearchLog) PeerRefused(
+	ctx context.Context,
+	address string,
+	status int,
+	spent time.Duration,
+) {
 	slog.WarnContext(ctx, msgPeerRefused,
 		slog.String("address", address),
 		slog.Int("status", status),
+		slog.Duration("spent", spent),
 	)
 }
 
-func (PeerSearchLog) PeerUnreachable(ctx context.Context, address string, cause error) {
+func (PeerSearchLog) PeerUnreachable(
+	ctx context.Context,
+	address string,
+	cause error,
+	spent time.Duration,
+) {
 	slog.WarnContext(ctx, msgPeerUnreachable,
 		slog.String("address", address),
 		slog.Any("error", cause),
+		slog.Duration("spent", spent),
 	)
 }
 
-func (PeerSearchLog) PeerAnswerUnreadable(ctx context.Context, address string, cause error) {
+func (PeerSearchLog) PeerAnswerUnreadable(
+	ctx context.Context,
+	address string,
+	cause error,
+	spent time.Duration,
+) {
 	slog.WarnContext(ctx, msgPeerAnswerUnreadable,
 		slog.String("address", address),
 		slog.Any("error", cause),
+		slog.Duration("spent", spent),
 	)
 }

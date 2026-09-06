@@ -37,7 +37,7 @@ func New(registry prometheusclient.Registerer, queryBudget time.Duration) *Netwo
 		}),
 		networkSearchCompleteness: prometheusclient.NewHistogram(prometheusclient.HistogramOpts{
 			Name:    "yacydhtsearch_network_search_completeness_ratio",
-			Help:    "Share of asked peers that answered inside the budget.",
+			Help:    "Share of asked peers that returned at least one item.",
 			Buckets: prometheusclient.LinearBuckets(0, 0.1, 11),
 		}),
 		networkSearchDurationSeconds: prometheusclient.NewHistogram(prometheusclient.HistogramOpts{

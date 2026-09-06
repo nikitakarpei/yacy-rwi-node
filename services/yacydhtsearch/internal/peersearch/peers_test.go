@@ -22,10 +22,10 @@ const (
 
 type silentOutcome struct{}
 
-func (silentOutcome) PeerAnswered(context.Context, string, int)           {}
-func (silentOutcome) PeerRefused(context.Context, string, int)            {}
-func (silentOutcome) PeerUnreachable(context.Context, string, error)      {}
-func (silentOutcome) PeerAnswerUnreadable(context.Context, string, error) {}
+func (silentOutcome) PeerAnswered(context.Context, string, int, time.Duration)           {}
+func (silentOutcome) PeerRefused(context.Context, string, int, time.Duration)            {}
+func (silentOutcome) PeerUnreachable(context.Context, string, error, time.Duration)      {}
+func (silentOutcome) PeerAnswerUnreadable(context.Context, string, error, time.Duration) {}
 
 func peerHolding(t *testing.T, addresses ...string) string {
 	t.Helper()

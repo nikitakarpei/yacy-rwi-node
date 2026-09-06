@@ -81,7 +81,11 @@ func RunService(
 				cfg.MaxResponseBytes,
 				peersearchwire.PeerSearchObservers{
 					peersearchobserversapplog.PeerSearchLog{},
-					peersearchobserversprometheus.New(registry),
+					peersearchobserversprometheus.New(
+						registry,
+						cfg.PeerCallBudget,
+						peerResultCeiling,
+					),
 				},
 			),
 			cfg.PeerCallsInFlight,

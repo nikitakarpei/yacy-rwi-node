@@ -6,11 +6,17 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	prometheusclient "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	peersearchobserversprometheus "github.com/nikitakarpei/yacy-rwi-node/yacydhtsearch/internal/peersearchobservers/prometheus"
+)
+
+const (
+	peerCallBudget    = 3 * time.Second
+	peerResultCeiling = 10
 )
 
 func publishedBy(t *testing.T, registry *prometheusclient.Registry) string {
@@ -29,12 +35,24 @@ func TestEveryPeerCallIsCountedUnderItsOutcome(t *testing.T) {
 	t.Parallel()
 
 	registry := prometheusclient.NewRegistry()
-	metrics := peersearchobserversprometheus.New(registry)
+	metrics := peersearchobserversprometheus.New(registry, peerCallBudget, peerResultCeiling)
 
-	metrics.PeerAnswered(t.Context(), "http://peer.example", 3)
-	metrics.PeerRefused(t.Context(), "http://peer.example", http.StatusServiceUnavailable)
-	metrics.PeerUnreachable(t.Context(), "http://peer.example", errors.New("no route"))
-	metrics.PeerAnswerUnreadable(t.Context(), "http://peer.example", errors.New("bad row"))
+	metrics.PeerAnswered(t.Context(), "http://peer.example", 3, time.Second)
+	metrics.PeerRefused(
+		t.Context(), "http://peer.example", http.StatusServiceUnavailable, time.Second,
+	)
+	metrics.PeerUnreachable(
+		t.Context(),
+		"http://peer.example",
+		errors.New("no route"),
+		peerCallBudget,
+	)
+	metrics.PeerAnswerUnreadable(
+		t.Context(),
+		"http://peer.example",
+		errors.New("bad row"),
+		time.Second,
+	)
 
 	body := publishedBy(t, registry)
 	for _, published := range []string{
@@ -42,6 +60,30 @@ func TestEveryPeerCallIsCountedUnderItsOutcome(t *testing.T) {
 		`yacydhtsearch_peer_calls_total{outcome="refused"} 1`,
 		`yacydhtsearch_peer_calls_total{outcome="unreachable"} 1`,
 		`yacydhtsearch_peer_calls_total{outcome="unreadable"} 1`,
+		`yacydhtsearch_peer_call_duration_seconds_sum{outcome="answered"} 1`,
+		`yacydhtsearch_peer_call_duration_seconds_sum{outcome="unreachable"} 3`,
+	} {
+		if !strings.Contains(body, published) {
+			t.Fatalf("metrics do not carry %q:\n%s", published, body)
+		}
+	}
+}
+
+func TestAnAnswerPublishesHowManyItemsItCarried(t *testing.T) {
+	t.Parallel()
+
+	registry := prometheusclient.NewRegistry()
+	metrics := peersearchobserversprometheus.New(registry, peerCallBudget, peerResultCeiling)
+
+	metrics.PeerAnswered(t.Context(), "http://peer.example", 3, time.Second)
+	metrics.PeerAnswered(t.Context(), "http://peer.example", peerResultCeiling, time.Second)
+
+	body := publishedBy(t, registry)
+	for _, published := range []string{
+		"yacydhtsearch_peer_answer_items_count 2",
+		"yacydhtsearch_peer_answer_items_sum 13",
+		`yacydhtsearch_peer_answer_items_bucket{le="3"} 1`,
+		`yacydhtsearch_peer_answer_items_bucket{le="10"} 2`,
 	} {
 		if !strings.Contains(body, published) {
 			t.Fatalf("metrics do not carry %q:\n%s", published, body)

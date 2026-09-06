@@ -412,8 +412,8 @@
     },
     {
       "id": 9,
-      "title": "Share of asked peers that answered inside the budget (p10/p50/p90)",
-      "description": "p10 is the tenth of network searches that got the least back. A network search with no asked peer is absent here.",
+      "title": "Share of asked peers that returned at least one item (p10/p50/p90)",
+      "description": "A peer that answered holding nothing is not counted here. p10 is the tenth of network searches that got the least back. A network search with no asked peer is absent here.",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -724,7 +724,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 44
       },
@@ -755,7 +755,8 @@
     },
     {
       "id": 18,
-      "title": "Share of calls a peer answered",
+      "title": "One call to one peer (p50/p95), by outcome",
+      "description": "An unreachable peer holds the call until the peer call budget ends, so it costs the most and returns the least.",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -763,20 +764,19 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 8,
         "y": 44
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit",
+          "unit": "s",
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 0,
             "showPoints": "auto"
           },
-          "min": 0,
-          "max": 1
+          "min": 0
         },
         "overrides": []
       },
@@ -789,13 +789,64 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (instance) (clamp_min(yacydhtsearch_peer_calls_total{outcome=\"answered\",instance=~\"$service_instance\"} - (yacydhtsearch_peer_calls_total{outcome=\"answered\",instance=~\"$service_instance\"} offset $window), 0)) / sum by (instance) (clamp_min(yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} - (yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} offset $window), 0)) or sum by (instance) (clamp_min(yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} - (yacydhtsearch_peer_calls_total{instance=~\"$service_instance\"} offset $window), 0)) * 0",
-          "legendFormat": "{{instance}}"
+          "expr": "histogram_quantile(0.50, sum by (le, outcome) (clamp_min(yacydhtsearch_peer_call_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_peer_call_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p50 {{outcome}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, outcome) (clamp_min(yacydhtsearch_peer_call_duration_seconds_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_peer_call_duration_seconds_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p95 {{outcome}}"
         }
       ]
     },
     {
       "id": 19,
+      "title": "Items one peer returned for one search (p50/p95)",
+      "description": "A peer returns at most the item ceiling one search asks it for. An answer that carries nothing counts as zero.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 44
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "showPoints": "auto"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "interval": "$window",
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (clamp_min(yacydhtsearch_peer_answer_items_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_peer_answer_items_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (clamp_min(yacydhtsearch_peer_answer_items_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_peer_answer_items_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "id": 20,
       "title": "Ranking cache",
       "type": "row",
       "gridPos": {
@@ -807,7 +858,7 @@
       "panels": []
     },
     {
-      "id": 20,
+      "id": 21,
       "title": "Rankings answered, by where the ranking came from",
       "type": "timeseries",
       "datasource": {
@@ -846,7 +897,7 @@
       ]
     },
     {
-      "id": 21,
+      "id": 22,
       "title": "Share of queries answered from the cache",
       "type": "timeseries",
       "datasource": {
@@ -887,7 +938,7 @@
       ]
     },
     {
-      "id": 22,
+      "id": 23,
       "title": "Ranking cache failures, by action",
       "description": "A lookup failure sends a query the cache could have answered to the network. A store failure means the next query pays the same cost.",
       "type": "state-timeline",
@@ -947,51 +998,6 @@
       ]
     },
     {
-      "id": 23,
-      "title": "Items one ranking carries (p50/p95), by where the ranking came from",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 61
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "showPoints": "auto"
-          },
-          "min": 0
-        },
-        "overrides": []
-      },
-      "interval": "$window",
-      "options": {
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le, source) (clamp_min(yacydhtsearch_ranking_items_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_ranking_items_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
-          "legendFormat": "p50 {{source}}"
-        },
-        {
-          "refId": "B",
-          "expr": "histogram_quantile(0.95, sum by (le, source) (clamp_min(yacydhtsearch_ranking_items_bucket{instance=~\"$service_instance\"} - (yacydhtsearch_ranking_items_bucket{instance=~\"$service_instance\"} offset $window), 0)))",
-          "legendFormat": "p95 {{source}}"
-        }
-      ]
-    },
-    {
       "id": 24,
       "title": "Go process",
       "type": "row",
@@ -999,7 +1005,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 69
+        "y": 61
       },
       "panels": []
     },
@@ -1015,7 +1021,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 70
+        "y": 62
       },
       "fieldConfig": {
         "defaults": {
@@ -1065,7 +1071,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 70
+        "y": 62
       },
       "fieldConfig": {
         "defaults": {
@@ -1105,7 +1111,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 70
+        "y": 62
       },
       "fieldConfig": {
         "defaults": {
@@ -1145,7 +1151,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 78
+        "y": 70
       },
       "fieldConfig": {
         "defaults": {
@@ -1185,7 +1191,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 78
+        "y": 70
       },
       "fieldConfig": {
         "defaults": {
@@ -1225,7 +1231,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 78
+        "y": 70
       },
       "fieldConfig": {
         "defaults": {
