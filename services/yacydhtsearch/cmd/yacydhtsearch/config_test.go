@@ -28,8 +28,13 @@ func TestAServiceConfigFallsBackToTheDocumentedDefaults(t *testing.T) {
 	if cfg.ListenAddr != main.DefaultListenAddr || cfg.OpsAddr != main.DefaultOpsAddr {
 		t.Fatalf("addresses = %q and %q, want the defaults", cfg.ListenAddr, cfg.OpsAddr)
 	}
-	if cfg.QueryBudget != main.DefaultQueryBudget || cfg.PeerCooldown != main.DefaultPeerCooldown {
-		t.Fatalf("budgets = %v and %v, want the defaults", cfg.QueryBudget, cfg.PeerCooldown)
+	if cfg.QueryBudget != main.DefaultQueryBudget ||
+		cfg.PeerSearchCooldown != main.DefaultPeerSearchCooldown {
+		t.Fatalf(
+			"budgets = %v and %v, want the defaults",
+			cfg.QueryBudget,
+			cfg.PeerSearchCooldown,
+		)
 	}
 	if cfg.Partitions != 1<<main.DefaultPartitionExponent {
 		t.Fatalf("Partitions = %d, want %d", cfg.Partitions, 1<<main.DefaultPartitionExponent)
@@ -59,6 +64,7 @@ func TestAnOperatorOverridesEveryBudgetAndLimit(t *testing.T) {
 
 	environment := minimalEnvironment()
 	environment[main.EnvQueryBudget] = "9s"
+	environment[main.EnvPeerSearchCooldown] = "7s"
 	environment[main.EnvPeerCallsInFlight] = "7"
 	environment[main.EnvRecordCeiling] = "25"
 
@@ -66,7 +72,8 @@ func TestAnOperatorOverridesEveryBudgetAndLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load service config: %v", err)
 	}
-	if cfg.QueryBudget != 9*time.Second || cfg.PeerCallsInFlight != 7 || cfg.RecordCeiling != 25 {
+	if cfg.QueryBudget != 9*time.Second || cfg.PeerSearchCooldown != 7*time.Second ||
+		cfg.PeerCallsInFlight != 7 || cfg.RecordCeiling != 25 {
 		t.Fatalf("config = %+v, want the overrides", cfg)
 	}
 }

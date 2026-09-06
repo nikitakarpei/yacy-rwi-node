@@ -19,7 +19,7 @@ const (
 	EnvEgressProxyURL       = "EGRESS_PROXY_URL"
 	EnvQueryBudget          = "YACYDHTSEARCH_QUERY_BUDGET"
 	EnvPeerCallBudget       = "YACYDHTSEARCH_PEER_CALL_BUDGET"
-	EnvPeerCooldown         = "YACYDHTSEARCH_PEER_COOLDOWN"
+	EnvPeerSearchCooldown   = "YACYDHTSEARCH_PEER_SEARCH_COOLDOWN"
 	EnvPeerCallsInFlight    = "YACYDHTSEARCH_PEER_CALLS_IN_FLIGHT"
 	EnvDirectoryCapacity    = "YACYDHTSEARCH_DIRECTORY_CAPACITY"
 	EnvRefreshInterval      = "YACYDHTSEARCH_REFRESH_INTERVAL"
@@ -36,7 +36,7 @@ const (
 	DefaultOpsAddr              = ":9090"
 	DefaultQueryBudget          = 5 * time.Second
 	DefaultPeerCallBudget       = 4 * time.Second
-	DefaultPeerCooldown         = 5 * time.Second
+	DefaultPeerSearchCooldown   = 5 * time.Second
 	DefaultPeerCallsInFlight    = 24
 	DefaultDirectoryCapacity    = 4096
 	DefaultRefreshInterval      = 5 * time.Minute
@@ -53,25 +53,25 @@ const (
 )
 
 type ServiceConfig struct {
-	ListenAddr        string
-	OpsAddr           string
-	NetworkName       string
-	SeedlistURLs      []string
-	EgressProxyURL    *url.URL
-	QueryBudget       time.Duration
-	PeerCallBudget    time.Duration
-	PeerCooldown      time.Duration
-	PeerCallsInFlight int
-	DirectoryCapacity int
-	RefreshInterval   time.Duration
-	ProbeBudget       time.Duration
-	Partitions        yacymodel.DHTRingPartitions
-	PeerRedundancy    int
-	MaxResponseBytes  int64
-	RecordCeiling     int
-	NATSURL           string
-	RankingCache      int
-	RankingLifetime   time.Duration
+	ListenAddr         string
+	OpsAddr            string
+	NetworkName        string
+	SeedlistURLs       []string
+	EgressProxyURL     *url.URL
+	QueryBudget        time.Duration
+	PeerCallBudget     time.Duration
+	PeerSearchCooldown time.Duration
+	PeerCallsInFlight  int
+	DirectoryCapacity  int
+	RefreshInterval    time.Duration
+	ProbeBudget        time.Duration
+	Partitions         yacymodel.DHTRingPartitions
+	PeerRedundancy     int
+	MaxResponseBytes   int64
+	RecordCeiling      int
+	NATSURL            string
+	RankingCache       int
+	RankingLifetime    time.Duration
 }
 
 func LoadServiceConfig(getenv func(string) string) (ServiceConfig, error) {
@@ -103,35 +103,35 @@ func LoadServiceConfig(getenv func(string) string) (ServiceConfig, error) {
 	}
 
 	return ServiceConfig{
-		ListenAddr:        envconfig.String(getenv, EnvListenAddr, DefaultListenAddr),
-		OpsAddr:           envconfig.String(getenv, EnvOpsAddr, DefaultOpsAddr),
-		NetworkName:       envconfig.String(getenv, EnvNetworkName, yacyproto.DefaultNetwork),
-		SeedlistURLs:      seedlistURLs,
-		EgressProxyURL:    egressProxyURL,
-		QueryBudget:       durations.queryBudget,
-		PeerCallBudget:    durations.peerCallBudget,
-		PeerCooldown:      durations.peerCooldown,
-		PeerCallsInFlight: counts.peerCallsInFlight,
-		DirectoryCapacity: counts.directoryCapacity,
-		RefreshInterval:   durations.refreshInterval,
-		ProbeBudget:       durations.probeBudget,
-		Partitions:        partitions,
-		PeerRedundancy:    counts.peerRedundancy,
-		MaxResponseBytes:  maxResponseBytes,
-		RecordCeiling:     counts.recordCeiling,
-		NATSURL:           strings.TrimSpace(getenv(EnvNATSURL)),
-		RankingCache:      counts.rankingCacheCapacity,
-		RankingLifetime:   durations.rankingLifetime,
+		ListenAddr:         envconfig.String(getenv, EnvListenAddr, DefaultListenAddr),
+		OpsAddr:            envconfig.String(getenv, EnvOpsAddr, DefaultOpsAddr),
+		NetworkName:        envconfig.String(getenv, EnvNetworkName, yacyproto.DefaultNetwork),
+		SeedlistURLs:       seedlistURLs,
+		EgressProxyURL:     egressProxyURL,
+		QueryBudget:        durations.queryBudget,
+		PeerCallBudget:     durations.peerCallBudget,
+		PeerSearchCooldown: durations.peerSearchCooldown,
+		PeerCallsInFlight:  counts.peerCallsInFlight,
+		DirectoryCapacity:  counts.directoryCapacity,
+		RefreshInterval:    durations.refreshInterval,
+		ProbeBudget:        durations.probeBudget,
+		Partitions:         partitions,
+		PeerRedundancy:     counts.peerRedundancy,
+		MaxResponseBytes:   maxResponseBytes,
+		RecordCeiling:      counts.recordCeiling,
+		NATSURL:            strings.TrimSpace(getenv(EnvNATSURL)),
+		RankingCache:       counts.rankingCacheCapacity,
+		RankingLifetime:    durations.rankingLifetime,
 	}, nil
 }
 
 type configuredDurations struct {
-	queryBudget     time.Duration
-	peerCallBudget  time.Duration
-	peerCooldown    time.Duration
-	refreshInterval time.Duration
-	probeBudget     time.Duration
-	rankingLifetime time.Duration
+	queryBudget        time.Duration
+	peerCallBudget     time.Duration
+	peerSearchCooldown time.Duration
+	refreshInterval    time.Duration
+	probeBudget        time.Duration
+	rankingLifetime    time.Duration
 }
 
 func durationsOf(getenv func(string) string) (configuredDurations, error) {
@@ -144,7 +144,7 @@ func durationsOf(getenv func(string) string) (configuredDurations, error) {
 	}{
 		{EnvQueryBudget, DefaultQueryBudget, &durations.queryBudget},
 		{EnvPeerCallBudget, DefaultPeerCallBudget, &durations.peerCallBudget},
-		{EnvPeerCooldown, DefaultPeerCooldown, &durations.peerCooldown},
+		{EnvPeerSearchCooldown, DefaultPeerSearchCooldown, &durations.peerSearchCooldown},
 		{EnvRefreshInterval, DefaultRefreshInterval, &durations.refreshInterval},
 		{EnvProbeBudget, DefaultProbeBudget, &durations.probeBudget},
 		{EnvRankingLifetime, DefaultRankingLifetime, &durations.rankingLifetime},

@@ -17,22 +17,22 @@ import (
 
 func TestTheServiceAnswersSearchesAndPublishesMetricsUntilItStops(t *testing.T) {
 	cfg := yacydhtsearch.ServiceConfig{
-		ListenAddr:        reservedPort(t),
-		OpsAddr:           reservedPort(t),
-		NetworkName:       "freeworld",
-		SeedlistURLs:      []string{"http://127.0.0.1:1/yacy/seedlist.html"},
-		EgressProxyURL:    &url.URL{Scheme: "http", Host: "127.0.0.1:1"},
-		QueryBudget:       time.Second,
-		PeerCallBudget:    time.Second,
-		PeerCooldown:      5 * time.Second,
-		PeerCallsInFlight: 2,
-		DirectoryCapacity: 8,
-		RefreshInterval:   time.Hour,
-		ProbeBudget:       time.Second,
-		Partitions:        16,
-		PeerRedundancy:    3,
-		MaxResponseBytes:  1024,
-		RecordCeiling:     50,
+		ListenAddr:         reservedPort(t),
+		OpsAddr:            reservedPort(t),
+		NetworkName:        "freeworld",
+		SeedlistURLs:       []string{"http://127.0.0.1:1/yacy/seedlist.html"},
+		EgressProxyURL:     &url.URL{Scheme: "http", Host: "127.0.0.1:1"},
+		QueryBudget:        time.Second,
+		PeerCallBudget:     time.Second,
+		PeerSearchCooldown: 5 * time.Second,
+		PeerCallsInFlight:  2,
+		DirectoryCapacity:  8,
+		RefreshInterval:    time.Hour,
+		ProbeBudget:        time.Second,
+		Partitions:         16,
+		PeerRedundancy:     3,
+		MaxResponseBytes:   1024,
+		RecordCeiling:      50,
 	}
 
 	ctx, stop := context.WithCancel(t.Context())

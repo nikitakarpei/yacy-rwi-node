@@ -59,7 +59,7 @@ func RunService(
 	outbound := outboundClient(cfg)
 	directory := peerdirectory.New(
 		cfg.DirectoryCapacity,
-		cfg.PeerCooldown,
+		cfg.PeerSearchCooldown,
 		time.Now,
 		leastrecentlyanswered.New(),
 		peerdirectory.DirectoryObservers{

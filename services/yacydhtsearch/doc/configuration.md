@@ -35,12 +35,15 @@ answer stops the service from starting.
 
 ## Peer directory
 
+The service probes peers to confirm that they answer. It sends searches only to
+peers that answered their latest probe.
+
 | Variable | Default | Meaning |
 |---|---|---|
 | `YACYDHTSEARCH_DIRECTORY_CAPACITY` | `4096` | Most peers the directory holds. A full directory drops the peer that answered longest ago. |
-| `YACYDHTSEARCH_REFRESH_INTERVAL` | `5m` | Time between two reads of the seedlists. |
-| `YACYDHTSEARCH_PROBE_BUDGET` | `3s` | Time one liveness probe of one peer address may take. |
-| `YACYDHTSEARCH_PEER_COOLDOWN` | `5s` | Time a peer rests after a query before it is asked again. |
+| `YACYDHTSEARCH_REFRESH_INTERVAL` | `5m` | Time between seedlist reads and probe cycles. |
+| `YACYDHTSEARCH_PROBE_BUDGET` | `3s` | Time one probe of one peer address may take. |
+| `YACYDHTSEARCH_PEER_SEARCH_COOLDOWN` | `5s` | Time between search requests sent to the same peer. |
 
 ## Peer selection
 
@@ -55,20 +58,11 @@ answer stops the service from starting.
 |---|---|---|
 | `YACYDHTSEARCH_QUERY_BUDGET` | `5s` | Time one client query may take, end to end. |
 | `YACYDHTSEARCH_PEER_CALL_BUDGET` | `4s` | Time one call to one peer may take. |
-| `YACYDHTSEARCH_PEER_CALLS_IN_FLIGHT` | `24` | Calls to peers that run at the same time. |
+| `YACYDHTSEARCH_PEER_CALLS_IN_FLIGHT` | `24` | Most peer calls within one query that run at the same time. |
 | `YACYDHTSEARCH_MAX_RESPONSE_BYTES` | `4194304` | Most bytes read from one peer answer or one seedlist. |
 
-## Throughput
+## Peer search limits
 
-A peer accepts 12 remote searches per minute from one client address, which is
-one search every 5 seconds. The cooldown holds each peer to that rate.
-
-The query rate this process can serve is therefore a property of the network,
-not of the process. With `P` peers that answer probes, and `k` peers asked for
-each query, the ceiling is `P / (5k)` distinct queries per second. A repeated
-query costs no peer call while its ranking is cached. To serve more queries,
-give the service more seedlists or more reachable peers. A larger budget or more
-calls in flight does not raise this ceiling.
-
-An egress proxy shared with another service makes both services one client
-address to every peer, and they then share each peer's allowance.
+YaCy peers can limit remote searches by client address. Service instances that
+use the same egress proxy normally share that allowance. The peer cooldown
+reduces how often this service uses that allowance on one peer.
