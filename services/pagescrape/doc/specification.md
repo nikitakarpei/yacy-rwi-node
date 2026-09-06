@@ -27,14 +27,10 @@ Scrape requests and page offers pass through NATS JetStream.
 * For each valid request, the service SHALL make one fetch, at the fetch URL of the request.
 * The service SHALL send every origin request through the configured proxy.
 * A fetch SHALL follow redirects, but no more hops than the configuration permits.
-* A fetch SHALL fail as `redirects-exhausted` when it uses all the hops, or when the
-  redirects come back to a URL it fetched before.
 * A redirect SHALL NOT change the page URL that identifies the offered page.
 * A fetch that succeeds SHALL offer the page one time. The offer carries the page URL, the
   landed URL, the content type, the content, and all `X-Robots-Tag` values.
 * A fetch that does not succeed SHALL put one last failure on the outcome feed for the page.
-  The origin can refuse the page, reject it, report no change, send too much data, or name
-  an invalid redirect target.
 * The service SHALL defer the scrape when the origin answers `429` or `503`. It SHALL wait
   for the time in `Retry-After`, or one minute when that time is absent or unreadable.
 * The service SHALL scrape a deferred request again, until it succeeds or until the
