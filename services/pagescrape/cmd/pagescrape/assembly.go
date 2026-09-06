@@ -14,6 +14,7 @@ import (
 
 	pagefetchershttp "github.com/nikitakarpei/yacy-rwi-node/pagefetch/pagefetchers/http"
 	pageofferpublishersjetstream "github.com/nikitakarpei/yacy-rwi-node/pagescrape/internal/pageofferpublishers/jetstream"
+	"github.com/nikitakarpei/yacy-rwi-node/pagescrape/internal/redirectfollowingfetch"
 	scrapeintakepkg "github.com/nikitakarpei/yacy-rwi-node/pagescrape/internal/scrapeintake"
 	scrapeintakeobserversapplog "github.com/nikitakarpei/yacy-rwi-node/pagescrape/internal/scrapeintakeobservers/applog"
 	scrapeintakeobserversprometheus "github.com/nikitakarpei/yacy-rwi-node/pagescrape/internal/scrapeintakeobservers/prometheus"
@@ -79,12 +80,15 @@ func RunService(ctx context.Context, cfg ServiceConfig) error {
 	)
 	intake := scrapeintakepkg.NewScrapeRequestConsumer(scrapeintakepkg.Config{
 		ScrapeRequests: consumer,
-		PageFetcher: pagefetchershttp.New(
-			cfg.ProxyURL,
-			cfg.ProxyDialMode,
-			cfg.UserAgent,
-			cfg.MaxBodyBytes,
-			cfg.FetchDeadline,
+		PageFetcher: redirectfollowingfetch.New(
+			pagefetchershttp.New(
+				cfg.ProxyURL,
+				cfg.ProxyDialMode,
+				cfg.UserAgent,
+				cfg.MaxBodyBytes,
+				cfg.FetchDeadline,
+			),
+			cfg.MaxRedirectHops,
 		),
 		PageOffers:        pageofferpublishersjetstream.NewPageOfferPublisher(broker),
 		ScrapeSchedules:   scrapeschedulesjetstream.NewScrapeSchedules(broker, time.Now),

@@ -94,7 +94,6 @@ func TestPageReadFromTheOriginIsOfferedToTheCorpora(t *testing.T) {
 	read := pageReads{outcome: pagefetch.FetchOutcome{
 		Status: pagefetch.FetchSucceeded,
 		Page: pagefetch.FetchedPage{
-			LandedURL:   canonicalurltest.CanonicalURLOf(t, pageURL),
 			ContentType: "text/html",
 			Body:        []byte("<html lang=\"en\"><body>page</body></html>"),
 		},
@@ -113,13 +112,16 @@ func TestPageReadFromTheOriginIsOfferedToTheCorpora(t *testing.T) {
 	}
 }
 
-func TestPageThatRedirectsIsOfferedUnderTheURLTheRequestNamed(t *testing.T) {
+func TestPageThatLandedElsewhereIsOfferedUnderTheURLTheRequestNamed(t *testing.T) {
 	request := scrapeRequestForThePage(t)
 	landedURL := canonicalurltest.CanonicalURLOf(t, landedPageURL)
-	read := pageReads{outcome: pagefetch.FetchOutcome{
-		Status: pagefetch.FetchSucceeded,
-		Page:   pagefetch.FetchedPage{LandedURL: landedURL, ContentType: "text/html"},
-	}}
+	read := pageReads{
+		landedURL: landedURL,
+		outcome: pagefetch.FetchOutcome{
+			Status: pagefetch.FetchSucceeded,
+			Page:   pagefetch.FetchedPage{ContentType: "text/html"},
+		},
+	}
 
 	intake := runScrapeIntake(t, request, read, time.Now())
 
@@ -156,6 +158,34 @@ func TestPageTheOriginDoesNotServeIsReportedAsAScrapeFailureAndSettled(t *testin
 	}
 	if settlement := intake.message.Settlement(t); settlement != pullintaketest.Acknowledged {
 		t.Errorf("the request was %s, want it %s", settlement, pullintaketest.Acknowledged)
+	}
+}
+
+func TestPageStillRedirectingWhenTheReadStoppedFailsAsRedirectsExhausted(t *testing.T) {
+	read := pageReads{outcome: pagefetch.FetchOutcome{Status: pagefetch.FetchRedirected}}
+
+	intake := runScrapeIntake(t, scrapeRequestForThePage(t), read, time.Now())
+
+	if len(intake.offers.failures) != 1 {
+		t.Fatalf("reported %d failures, want exactly one", len(intake.offers.failures))
+	}
+	if got := intake.offers.failures[0].Reason; got != pagescrapecontract.RedirectsExhausted {
+		t.Errorf("failure reason = %s, want %s", got, pagescrapecontract.RedirectsExhausted)
+	}
+}
+
+func TestPageBehindAnInvalidRedirectTargetFails(t *testing.T) {
+	read := pageReads{
+		outcome: pagefetch.FetchOutcome{Status: pagefetch.FetchRedirectTargetInvalid},
+	}
+
+	intake := runScrapeIntake(t, scrapeRequestForThePage(t), read, time.Now())
+
+	if len(intake.offers.failures) != 1 {
+		t.Fatalf("reported %d failures, want exactly one", len(intake.offers.failures))
+	}
+	if got := intake.offers.failures[0].Reason; got != pagescrapecontract.RedirectTargetInvalid {
+		t.Errorf("failure reason = %s, want %s", got, pagescrapecontract.RedirectTargetInvalid)
 	}
 }
 
@@ -243,7 +273,6 @@ func TestReadDeferredPastTheDeferralWindowFails(t *testing.T) {
 func TestRequestComesBackWhenTheBrokerTakesNoOffer(t *testing.T) {
 	read := pageReads{outcome: pagefetch.FetchOutcome{
 		Status: pagefetch.FetchSucceeded,
-		Page:   pagefetch.FetchedPage{LandedURL: canonicalurltest.CanonicalURLOf(t, pageURL)},
 	}}
 	broker := acceptingScrapeBroker()
 	broker.offers = &pageOffers{err: errBrokerRefused}

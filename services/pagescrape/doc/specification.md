@@ -19,13 +19,16 @@ Scrape requests and page offers pass through NATS JetStream.
 
 * For each valid request, the service SHALL start one read of its fetch URL. If the request
   has no fetch URL, the service SHALL read its page URL.
-* A page read SHALL follow redirects and route every origin request through the configured
-  proxy.
+* A page read SHALL follow redirects up to the configured hop limit and route every origin
+  request through the configured proxy.
+* A read that still redirects at the hop limit, or that circles back to a URL it already
+  read, SHALL fail as `redirects-exhausted`.
 * A successful read SHALL publish one offered page with the page URL, landed URL, content
   type, response body, and any `X-Robots-Tag` values.
 * A redirect SHALL NOT change the page URL that identifies the offered page.
-* A read that is refused, rejected, unchanged, oversized, invalid after a redirect, or
-  otherwise unsuccessful SHALL publish one final failure on the outcome feed for the page.
+* A read that is refused, rejected, unchanged, oversized, sent to an invalid redirect
+  target, or otherwise unsuccessful SHALL publish one final failure on the outcome feed
+  for the page.
 * A `429` or `503` response SHALL defer the scrape by its `Retry-After` value. An absent or
   invalid value SHALL defer the scrape by one minute.
 * A deferred scrape SHALL become due again until it succeeds or the configured deferral

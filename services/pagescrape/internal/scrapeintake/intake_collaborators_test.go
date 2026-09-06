@@ -7,22 +7,30 @@ import (
 
 	"github.com/nikitakarpei/yacy-rwi-node/canonicalurl"
 	"github.com/nikitakarpei/yacy-rwi-node/pagefetch"
+	"github.com/nikitakarpei/yacy-rwi-node/pagescrape/internal/redirectfollowingfetch"
 	"github.com/nikitakarpei/yacy-rwi-node/pagescrapecontract"
 )
 
 var errBrokerRefused = errors.New("the broker refused the message")
 
 type pageReads struct {
-	outcome pagefetch.FetchOutcome
-	err     error
+	landedURL canonicalurl.CanonicalURL
+	outcome   pagefetch.FetchOutcome
+	err       error
 }
 
 func (r pageReads) Fetch(
-	context.Context,
-	canonicalurl.CanonicalURL,
-	pagefetch.PageVersion,
-) (pagefetch.FetchOutcome, error) {
-	return r.outcome, r.err
+	_ context.Context,
+	pageURL canonicalurl.CanonicalURL,
+	_ pagefetch.PageVersion,
+) (redirectfollowingfetch.LandedFetch, error) {
+	if r.err != nil {
+		return redirectfollowingfetch.LandedFetch{}, r.err
+	}
+	if r.landedURL.String() == "" {
+		return redirectfollowingfetch.LandedFetch{URL: pageURL, Outcome: r.outcome}, nil
+	}
+	return redirectfollowingfetch.LandedFetch{URL: r.landedURL, Outcome: r.outcome}, nil
 }
 
 type pageOffers struct {

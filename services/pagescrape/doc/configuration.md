@@ -22,6 +22,7 @@ The service is configured entirely through environment variables.
 | `SCRAPE_USER_AGENT` | `pagescrape (+https://yacy.net)` | HTTP user agent sent with every page read. |
 | `SCRAPE_MAX_BODY_BYTES` | `2097152` | Largest response body offered; a larger body fails the scrape. |
 | `SCRAPE_FETCH_DEADLINE` | `30s` | Time limit for one page read. |
+| `SCRAPE_MAX_REDIRECT_HOPS` | `10` | Redirects followed before a page read fails. |
 
 ## Intake and deferral
 

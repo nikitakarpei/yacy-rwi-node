@@ -6,6 +6,7 @@ import (
 
 	"github.com/nikitakarpei/yacy-rwi-node/canonicalurl"
 	"github.com/nikitakarpei/yacy-rwi-node/pagefetch"
+	"github.com/nikitakarpei/yacy-rwi-node/pagescrape/internal/redirectfollowingfetch"
 	"github.com/nikitakarpei/yacy-rwi-node/pagescrapecontract"
 	"github.com/nikitakarpei/yacy-rwi-node/serviceruntime/poisonhalt"
 	"github.com/nikitakarpei/yacy-rwi-node/serviceruntime/pullintake"
@@ -16,7 +17,7 @@ type PageFetcher interface {
 		ctx context.Context,
 		pageURL canonicalurl.CanonicalURL,
 		knownVersion pagefetch.PageVersion,
-	) (pagefetch.FetchOutcome, error)
+	) (redirectfollowingfetch.LandedFetch, error)
 }
 
 type PageOffers interface {
@@ -92,19 +93,21 @@ func (c *ScrapeRequestConsumer) processOne(
 		return poisonhalt.Halt(ctx, message.Identity(), err)
 	}
 	c.scrapeIntakeObserver.ScrapeRequestReceived(ctx, request.PageURL)
-	outcome, err := c.pageFetcher.Fetch(ctx, request.FetchURL, pagefetch.PageVersion{})
+	landed, err := c.pageFetcher.Fetch(ctx, request.FetchURL, pagefetch.PageVersion{})
 	if err != nil {
 		c.scrapeIntakeObserver.OriginReadFailed(ctx, request.FetchURL, err)
 		c.reportFailure(ctx, message, request, pagescrapecontract.NoReasonGiven)
 		return nil
 	}
-	switch outcome.Status {
+	switch landed.Outcome.Status {
 	case pagefetch.FetchSucceeded:
-		c.offerPage(ctx, message, pagescrapecontract.OfferedPageFrom(request, outcome.Page))
+		c.offerPage(ctx, message, pagescrapecontract.OfferedPageFrom(
+			request, landed.Outcome.Page, landed.URL,
+		))
 	case pagefetch.FetchDeferred:
-		c.deferScrape(ctx, message, request, outcome.DeferFor)
+		c.deferScrape(ctx, message, request, landed.Outcome.DeferFor)
 	default:
-		c.reportFailure(ctx, message, request, scrapeFailureReasonOf(outcome.Status))
+		c.reportFailure(ctx, message, request, scrapeFailureReasonOf(landed.Outcome.Status))
 	}
 	return nil
 }
@@ -177,8 +180,10 @@ func scrapeFailureReasonOf(status pagefetch.FetchStatus) pagescrapecontract.Scra
 		return pagescrapecontract.NotModified
 	case pagefetch.FetchAccessRefused, pagefetch.FetchRejected:
 		return pagescrapecontract.AccessRefused
-	case pagefetch.FetchLandedURLInvalid:
-		return pagescrapecontract.LandedURLInvalid
+	case pagefetch.FetchRedirected:
+		return pagescrapecontract.RedirectsExhausted
+	case pagefetch.FetchRedirectTargetInvalid:
+		return pagescrapecontract.RedirectTargetInvalid
 	case pagefetch.FetchOversized:
 		return pagescrapecontract.Oversized
 	default:
