@@ -46,7 +46,7 @@ type ScrapeRequestConsumer struct {
 	scrapeIntakeObserver ScrapeIntakeObserver
 	deferralWindow       time.Duration
 	intakeConcurrency    int
-	readingTime          func() time.Time
+	clock                Clock
 }
 
 //nolint:revive // a consumer names every collaborator it scrapes a page with
@@ -59,7 +59,7 @@ func NewScrapeRequestConsumer(
 	scrapeIntakeObserver ScrapeIntakeObserver,
 	deferralWindow time.Duration,
 	intakeConcurrency int,
-	readingTime func() time.Time,
+	clock Clock,
 ) *ScrapeRequestConsumer {
 	return &ScrapeRequestConsumer{
 		scrapeRequests:       scrapeRequests,
@@ -70,7 +70,7 @@ func NewScrapeRequestConsumer(
 		scrapeIntakeObserver: scrapeIntakeObserver,
 		deferralWindow:       deferralWindow,
 		intakeConcurrency:    intakeConcurrency,
-		readingTime:          readingTime,
+		clock:                clock,
 	}
 }
 
@@ -90,7 +90,7 @@ func (c *ScrapeRequestConsumer) processOne(
 	c.scrapeIntakeObserver.ScrapeRequestReceived(ctx, request.PageURL)
 	landed, err := c.pageFetcher.Fetch(ctx, request.FetchURL, pagefetch.PageVersion{})
 	if err != nil {
-		c.scrapeIntakeObserver.OriginReadFailed(ctx, request.FetchURL, err)
+		c.scrapeIntakeObserver.OriginFetchFailed(ctx, request.FetchURL, err)
 		c.reportFailure(ctx, message, request, pagescrapecontract.NoReasonGiven)
 		return nil
 	}
@@ -133,9 +133,9 @@ func (c *ScrapeRequestConsumer) deferScrape(
 	}
 	deferred := request
 	if deferred.DeferredSince.IsZero() {
-		deferred.DeferredSince = c.readingTime()
+		deferred.DeferredSince = c.clock.Now()
 	}
-	if c.readingTime().Sub(deferred.DeferredSince) > c.deferralWindow {
+	if c.clock.Now().Sub(deferred.DeferredSince) > c.deferralWindow {
 		c.reportFailure(ctx, message, request, pagescrapecontract.DeferredTooLong)
 		return
 	}

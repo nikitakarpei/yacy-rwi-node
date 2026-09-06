@@ -3,7 +3,7 @@
 ## Context
 
 `pagescrape` owns the scrape pipeline for a stack. The pipeline accepts a scrape request,
-reads the requested representation through an operator-supplied proxy, offers it to every
+fetches the requested representation through an operator-supplied proxy, offers it to every
 corpus, and carries scrape failures and corpus receipts to the outcome feed for the page.
 Scrape requests and page offers pass through NATS JetStream.
 
@@ -17,23 +17,23 @@ Scrape requests and page offers pass through NATS JetStream.
 
 ## Functional Requirements
 
-* For each valid request, the service SHALL start one read of its fetch URL. If the request
-  has no fetch URL, the service SHALL read its page URL.
-* A page read SHALL follow redirects up to the configured hop limit and route every origin
+* For each valid request, the service SHALL start one fetch of its fetch URL. If the request
+  has no fetch URL, the service SHALL fetch its page URL.
+* A page fetch SHALL follow redirects up to the configured hop limit and route every origin
   request through the configured proxy.
-* A read that still redirects at the hop limit, or that circles back to a URL it already
-  read, SHALL fail as `redirects-exhausted`.
-* A successful read SHALL publish one offered page with the page URL, landed URL, content
+* A fetch that still redirects at the hop limit, or that circles back to a URL it already
+  fetched, SHALL fail as `redirects-exhausted`.
+* A successful fetch SHALL publish one offered page with the page URL, landed URL, content
   type, response body, and any `X-Robots-Tag` values.
 * A redirect SHALL NOT change the page URL that identifies the offered page.
-* A read that is refused, rejected, unchanged, oversized, sent to an invalid redirect
+* A fetch that is refused, rejected, unchanged, oversized, sent to an invalid redirect
   target, or otherwise unsuccessful SHALL publish one final failure on the outcome feed
   for the page.
 * A `429` or `503` response SHALL defer the scrape by its `Retry-After` value. An absent or
   invalid value SHALL defer the scrape by one minute.
 * A deferred scrape SHALL become due again until it succeeds or the configured deferral
   window passes.
-* A request that forbids deferral SHALL fail on its first deferred read.
+* A request that forbids deferral SHALL fail on its first deferred fetch.
 * A request SHALL remain pending when its offered page or deferral cannot be accepted by the
   broker.
 * The service SHALL NOT discard an undecodable request.
@@ -43,12 +43,12 @@ Scrape requests and page offers pass through NATS JetStream.
 
 ## Non-Functional Requirements
 
-* The service SHALL bound every origin read by a deadline and a response-size limit.
+* The service SHALL bound every origin fetch by a deadline and a response-size limit.
 * The service SHALL bound concurrent intake and unacknowledged scrape requests.
 * Pending and deferred requests SHALL survive a service restart within the configured
   retention limits.
 * Instances that share a durable consumer name SHALL divide its requests. They SHALL NOT
-  each read every request.
+  each take every request.
 * The service SHALL expose scrape request and outcome announcement metrics over HTTP.
 
 ## Known Limitations

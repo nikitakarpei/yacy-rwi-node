@@ -74,7 +74,7 @@ func (m *ScrapeIntakeMetrics) ScrapeRequestReceived(
 	m.scrapeRequestsReceived.Inc()
 }
 
-func (m *ScrapeIntakeMetrics) OriginReadFailed(
+func (m *ScrapeIntakeMetrics) OriginFetchFailed(
 	_ context.Context,
 	_ canonicalurl.CanonicalURL,
 	_ error,

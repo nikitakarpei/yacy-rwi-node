@@ -27,6 +27,7 @@ import (
 	"github.com/nikitakarpei/yacy-rwi-node/serviceruntime/jetstreamconnect"
 	"github.com/nikitakarpei/yacy-rwi-node/serviceruntime/opsmetrics"
 	"github.com/nikitakarpei/yacy-rwi-node/serviceruntime/servergroup"
+	"github.com/nikitakarpei/yacy-rwi-node/wallclock"
 )
 
 const (
@@ -91,7 +92,7 @@ func RunService(ctx context.Context, cfg ServiceConfig) error {
 			cfg.MaxRedirectHops,
 		),
 		pageofferpublishersjetstream.NewPageOfferPublisher(broker),
-		scrapeschedulesjetstream.NewScrapeSchedules(broker, time.Now),
+		scrapeschedulesjetstream.NewScrapeSchedules(broker, wallclock.Clock{}),
 		outcomeFeed,
 		scrapeintakepkg.ScrapeIntakeObservers{
 			scrapeintakeobserversapplog.ScrapeIntakeLog{},
@@ -99,7 +100,7 @@ func RunService(ctx context.Context, cfg ServiceConfig) error {
 		},
 		cfg.ScrapeDeferralWindow,
 		cfg.ScrapeIntakeConcurrency,
-		time.Now,
+		wallclock.Clock{},
 	)
 
 	opsServer := &http.Server{
