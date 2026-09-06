@@ -49,32 +49,27 @@ type ScrapeRequestConsumer struct {
 	readingTime          func() time.Time
 }
 
-type Config struct {
-	ScrapeRequests       pullintake.MessageSource
-	PageFetcher          PageFetcher
-	PageOffers           PageOffers
-	ScrapeSchedules      ScrapeSchedules
-	ScrapeOutcomeFeed    ScrapeOutcomeFeed
-	ScrapeIntakeObserver ScrapeIntakeObserver
-	DeferralWindow       time.Duration
-	IntakeConcurrency    int
-	ReadingTime          func() time.Time
-}
-
-func NewScrapeRequestConsumer(config Config) *ScrapeRequestConsumer {
-	readingTime := config.ReadingTime
-	if readingTime == nil {
-		readingTime = time.Now
-	}
+//nolint:revive // a consumer names every collaborator it scrapes a page with
+func NewScrapeRequestConsumer(
+	scrapeRequests pullintake.MessageSource,
+	pageFetcher PageFetcher,
+	pageOffers PageOffers,
+	scrapeSchedules ScrapeSchedules,
+	scrapeOutcomeFeed ScrapeOutcomeFeed,
+	scrapeIntakeObserver ScrapeIntakeObserver,
+	deferralWindow time.Duration,
+	intakeConcurrency int,
+	readingTime func() time.Time,
+) *ScrapeRequestConsumer {
 	return &ScrapeRequestConsumer{
-		scrapeRequests:       config.ScrapeRequests,
-		pageFetcher:          config.PageFetcher,
-		pageOffers:           config.PageOffers,
-		scrapeSchedules:      config.ScrapeSchedules,
-		scrapeOutcomeFeed:    config.ScrapeOutcomeFeed,
-		scrapeIntakeObserver: config.ScrapeIntakeObserver,
-		deferralWindow:       config.DeferralWindow,
-		intakeConcurrency:    config.IntakeConcurrency,
+		scrapeRequests:       scrapeRequests,
+		pageFetcher:          pageFetcher,
+		pageOffers:           pageOffers,
+		scrapeSchedules:      scrapeSchedules,
+		scrapeOutcomeFeed:    scrapeOutcomeFeed,
+		scrapeIntakeObserver: scrapeIntakeObserver,
+		deferralWindow:       deferralWindow,
+		intakeConcurrency:    intakeConcurrency,
 		readingTime:          readingTime,
 	}
 }

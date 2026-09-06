@@ -61,17 +61,17 @@ func runScrapeIntakeAgainst(
 	}
 	message := &pullintaketest.Message{Body: body}
 	feed := &scrapeOutcomeFeed{}
-	consumer := scrapeintake.NewScrapeRequestConsumer(scrapeintake.Config{
-		ScrapeRequests:       pullintaketest.MessageSourceOf(message),
-		PageFetcher:          reads,
-		PageOffers:           broker.offers,
-		ScrapeSchedules:      broker.schedules,
-		ScrapeOutcomeFeed:    feed,
-		ScrapeIntakeObserver: scrapeintake.ScrapeIntakeObservers{silentScrapeIntakeObserver{}},
-		DeferralWindow:       deferralWindow,
-		IntakeConcurrency:    1,
-		ReadingTime:          func() time.Time { return readingTime },
-	})
+	consumer := scrapeintake.NewScrapeRequestConsumer(
+		pullintaketest.MessageSourceOf(message),
+		reads,
+		broker.offers,
+		broker.schedules,
+		feed,
+		scrapeintake.ScrapeIntakeObservers{silentScrapeIntakeObserver{}},
+		deferralWindow,
+		1,
+		func() time.Time { return readingTime },
+	)
 	if err := consumer.Run(context.Background()); err != nil {
 		t.Fatalf("run intake: %v", err)
 	}
@@ -301,16 +301,17 @@ func TestRequestComesBackWhenTheBrokerSchedulesNoLaterRead(t *testing.T) {
 
 func TestUnreadableScrapeRequestHaltsIntake(t *testing.T) {
 	message := &pullintaketest.Message{Body: []byte("not json")}
-	consumer := scrapeintake.NewScrapeRequestConsumer(scrapeintake.Config{
-		ScrapeRequests:       pullintaketest.MessageSourceOf(message),
-		PageFetcher:          pageReads{},
-		PageOffers:           &pageOffers{},
-		ScrapeSchedules:      &scrapeSchedules{},
-		ScrapeOutcomeFeed:    &scrapeOutcomeFeed{},
-		ScrapeIntakeObserver: scrapeintake.ScrapeIntakeObservers{silentScrapeIntakeObserver{}},
-		DeferralWindow:       deferralWindow,
-		IntakeConcurrency:    1,
-	})
+	consumer := scrapeintake.NewScrapeRequestConsumer(
+		pullintaketest.MessageSourceOf(message),
+		pageReads{},
+		&pageOffers{},
+		&scrapeSchedules{},
+		&scrapeOutcomeFeed{},
+		scrapeintake.ScrapeIntakeObservers{silentScrapeIntakeObserver{}},
+		deferralWindow,
+		1,
+		time.Now,
+	)
 
 	if err := consumer.Run(context.Background()); err == nil {
 		t.Fatal("want intake to halt on a request it cannot read")

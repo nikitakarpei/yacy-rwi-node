@@ -78,9 +78,9 @@ func RunService(ctx context.Context, cfg ServiceConfig) error {
 			scrapeoutcomefeedobserversprometheus.New(registry),
 		},
 	)
-	intake := scrapeintakepkg.NewScrapeRequestConsumer(scrapeintakepkg.Config{
-		ScrapeRequests: consumer,
-		PageFetcher: redirectfollowingfetch.New(
+	intake := scrapeintakepkg.NewScrapeRequestConsumer(
+		consumer,
+		redirectfollowingfetch.New(
 			pagefetchershttp.New(
 				cfg.ProxyURL,
 				cfg.ProxyDialMode,
@@ -90,17 +90,17 @@ func RunService(ctx context.Context, cfg ServiceConfig) error {
 			),
 			cfg.MaxRedirectHops,
 		),
-		PageOffers:        pageofferpublishersjetstream.NewPageOfferPublisher(broker),
-		ScrapeSchedules:   scrapeschedulesjetstream.NewScrapeSchedules(broker, time.Now),
-		ScrapeOutcomeFeed: outcomeFeed,
-		ScrapeIntakeObserver: scrapeintakepkg.ScrapeIntakeObservers{
+		pageofferpublishersjetstream.NewPageOfferPublisher(broker),
+		scrapeschedulesjetstream.NewScrapeSchedules(broker, time.Now),
+		outcomeFeed,
+		scrapeintakepkg.ScrapeIntakeObservers{
 			scrapeintakeobserversapplog.ScrapeIntakeLog{},
 			scrapeintakeobserversprometheus.New(registry),
 		},
-		DeferralWindow:    cfg.ScrapeDeferralWindow,
-		IntakeConcurrency: cfg.ScrapeIntakeConcurrency,
-		ReadingTime:       time.Now,
-	})
+		cfg.ScrapeDeferralWindow,
+		cfg.ScrapeIntakeConcurrency,
+		time.Now,
+	)
 
 	opsServer := &http.Server{
 		Addr:              cfg.OpsAddr,
