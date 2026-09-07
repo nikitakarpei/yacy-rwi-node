@@ -121,7 +121,7 @@ func Start(
 		t.Fatalf("start node container from Dockerfile: %v", err)
 	}
 	t.Cleanup(func() { _ = container.Terminate(context.Background()) })
-	containerlog.DumpOnFailure(t, "node", container)
+	containerlog.DumpOnFailure(t, cfg.Alias, container)
 	nodeURL := containerurl.HostURL(t, ctx, container, peerclient.ExposedPort)
 	if !pollwait.For(20*time.Second, func() bool {
 		return probe.OK(ctx, nodeURL+"/yacy/query.html?object=rwicount")
